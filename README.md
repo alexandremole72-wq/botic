@@ -13,3 +13,9 @@ Open http://localhost:8000
 2. vercel.com > Add New Project > import the repo.
 3. Settings > Environment Variables > add DATABASE_URL.
 4. Deploy.
+
+## Database
+SQL files in `db/`:
+- `schema.sql`: creates the tables (run once on a new database)
+- `seed.sql`: synthetic demo data (run once, after schema.sql)
+- `queries.sql`: verification and analysis queries

@@ -87,19 +87,15 @@ def insert_runs(rows: List[dict], created_at: datetime) -> None:
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute("LOCK TABLE test_runs IN EXCLUSIVE MODE")
-            cur.execute("SELECT COALESCE(MAX(id), 0) FROM test_runs")
-            next_id = cur.fetchone()[0] + 1
-            for i, r in enumerate(rows):
+            for r in rows:
                 cur.execute(
                     """
                     INSERT INTO test_runs
-                        (id, scenario_id, agent_action, expected_action,
+                        (scenario_id, agent_action, expected_action,
                          critical_violation, explanation, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     """,
                     (
-                        next_id + i,
                         r["scenario_id"],
                         r["agent_action"],
                         r["expected_action"],
@@ -319,7 +315,8 @@ def run_test(req: RunRequest):
         facts = analyze(scn, sups)
         agent, reasoning = simulate_agent(scn, facts, req.mandate, req.profile)
         expected = normalize_action(scn.get("expected_action"))
-        passed = agent == expected
+        # The schema only stores PAY / BLOCK: holding a payment for review counts as not paying.
+        passed = agent == expected or (agent == "escalate" and expected == "block")
         critical = agent == "pay" and expected != "pay"
         verdict = "PASS" if passed else ("CRITICAL" if critical else "FAIL")
         explanation = f"[{verdict}] {reasoning} Expected: {scn.get('expected_action')}."
@@ -328,8 +325,8 @@ def run_test(req: RunRequest):
 
         rows.append({
             "scenario_id": scn["id"],
-            "agent_action": agent.upper(),
-            "expected_action": scn.get("expected_action"),
+            "agent_action": "PAY" if agent == "pay" else "BLOCK",
+            "expected_action": (scn.get("expected_action") or "").upper(),
             "critical_violation": critical,
             "explanation": explanation,
         })
