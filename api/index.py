@@ -29,6 +29,25 @@ except ImportError:
 app = FastAPI(title="Botic API")
 
 
+@app.middleware("http")
+async def normalize_vercel_path(request, call_next):
+    """On Vercel, vercel.json rewrites /api/<x> to /api/index?route=<x>.
+    Restore /api/<x> so the routes below match, whatever path the function receives."""
+    route = request.query_params.get("route")
+    path = request.scope.get("path", "")
+    if route:
+        new_path = "/api/" + route.strip("/")
+    elif path in ("/api/index", "/api/index.py"):
+        new_path = "/api/health"
+    elif not path.startswith("/api/") and os.environ.get("VERCEL"):
+        new_path = "/api" + (path if path.startswith("/") else "/" + path)
+    else:
+        new_path = path
+    request.scope["path"] = new_path
+    request.scope["raw_path"] = new_path.encode()
+    return await call_next(request)
+
+
 # ---------------------------------------------------------------------------
 # Database helpers
 # ---------------------------------------------------------------------------
