@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Botic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #12151d;
+    --panel-2: #181c26;
+    --line: #262b38;
+    --text: #e8eaf0;
+    --muted: #8b92a6;
+    --accent: #5b8cff;
+    --pass: #2fbf71;
+    --fail: #f0a63a;
+    --crit: #ef4b5f;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 Inter, system-ui, sans-serif;
+  }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px; border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .logo {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), #8a5bff);
+    display: grid; place-items: center; font-size: 15px;
+  }
+  .db { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--pass); box-shadow: 0 0 8px var(--pass); }
+  .dot.ko { background: var(--crit); }
+
+  .steps { display: flex; gap: 8px; justify-content: center; padding: 22px 16px 0; flex-wrap: wrap; }
+  .step {
+    font-size: 13px; color: var(--muted); padding: 6px 14px;
+    border: 1px solid var(--line); border-radius: 999px;
+  }
+  .step.active { color: var(--text); border-color: var(--accent); background: rgba(91,140,255,.12); }
+  .step.done { color: var(--pass); border-color: rgba(47,191,113,.4); }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 28px 20px 60px; }
+  h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0 0 26px; }
+  .screen { display: none; }
+  .screen.on { display: block; animation: fade .3s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .card h3 { margin: 0 0 14px; font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+  input[type=text], input[type=number], select {
+    width: 100%; padding: 10px 12px; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; font: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .check { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 14px; color: var(--text); cursor: pointer; }
+  .check input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; }
+  .chip span {
+    display: inline-block; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line);
+    cursor: pointer; font-size: 14px; background: var(--panel-2);
+  }
+  .chip input:checked + span { border-color: var(--accent); background: rgba(91,140,255,.15); }
+  .profiles { display: grid; gap: 10px; }
+  .profile { display: flex; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: var(--panel-2); }
+  .profile input { accent-color: var(--accent); margin-top: 3px; }
+  .profile b { display: block; font-weight: 600; }
+  .profile small { color: var(--muted); }
+
+  .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+  button {
+    font: inherit; font-weight: 600; padding: 12px 22px; border-radius: 10px; border: 0; cursor: pointer;
+  }
+  .primary { background: var(--accent); color: #fff; }
+  .primary:hover { filter: brightness(1.1); }
+  .primary:disabled { opacity: .5; cursor: not-allowed; }
+  .ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+
+  /* Running screen */
+  .progress { height: 6px; background: var(--panel-2); border-radius: 99px; overflow: hidden; margin: 6px 0 22px; }
+  .bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), #8a5bff); transition: width .35s ease; }
+  .feed { display: grid; gap: 10px; }
+  .row {
+    display: grid; grid-template-columns: 96px 1fr auto; gap: 14px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+    animation: fade .3s ease;
+  }
+  .badge { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-align: center; letter-spacing: .04em; }
+  .badge.pass { color: var(--pass); background: rgba(47,191,113,.12); }
+  .badge.fail { color: var(--fail); background: rgba(240,166,58,.12); }
+  .badge.crit { color: var(--crit); background: rgba(239,75,95,.14); }
+  .badge.wait { color: var(--muted); background: var(--panel-2); }
+  .row .title { font-weight: 600; }
+  .row .meta { font-size: 13px; color: var(--muted); }
+  .row .amt { font-weight: 600; white-space: nowrap; }
+
+  /* Report */
+  .hero { display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: center; }
+  @media (max-width: 720px) { .hero { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+  .gauge { position: relative; width: 200px; height: 200px; }
+  .gauge svg { transform: rotate(-90deg); }
+  .gauge .val { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .gauge .num { font-size: 52px; font-weight: 700; line-height: 1; }
+  .gauge .of { font-size: 13px; color: var(--muted); }
+  .verdict { font-size: 22px; font-weight: 700; margin: 0 0 8px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+  .kpi { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .kpi .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .kpi .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .cat { margin: 12px 0; }
+  .cat .top { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+  .mini { height: 8px; background: var(--panel-2); border-radius: 99px; overflow: hidden; }
+  .mini div { height: 100%; border-radius: 99px; }
+  ul.fixes { margin: 0; padding-left: 18px; }
+  ul.fixes li { margin: 8px 0; }
+  .net { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .why { color: var(--muted); font-size: 13px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 18px; }
+  .error { background: rgba(239,75,95,.1); border: 1px solid rgba(239,75,95,.4); color: #ffb3bd; padding: 12px 14px; border-radius: 10px; margin-bottom: 18px; display: none; }
+  .table-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">✓</div> Botic</div>
+  <div class="db"><span class="dot" id="dbDot"></span><span id="dbText">Connecting to database…</span></div>
+</header>
+
+<div class="steps">
+  <div class="step active" data-step="1">1 · Connect agent</div>
+  <div class="step" data-step="2">2 · Test in progress</div>
+  <div class="step" data-step="3">3 · Score & report</div>
+</div>
+
+<main>
+  <div class="error" id="err"></div>
+
+  <!-- SCREEN 1 -->
+  <section class="screen on" id="s1">
+    <h1>Crash-test your payment agent</h1>
+    <p class="sub">Run your B2B purchasing agent against this week's attack scenarios before it touches a real card or bank account.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Agent</h3>
+        <label for="agentName">Agent name</label>
+        <input type="text" id="agentName" value="ProcureBot v2.3">
+        <label for="company">Company</label>
+        <input type="text" id="company" value="ProcureBot SAS">
+        <label>Target payment networks</label>
+        <div class="chips">
+          <label class="chip"><input type="checkbox" name="net" value="Visa" checked><span>Visa</span></label>
+          <label class="chip"><input type="checkbox" name="net" value="Mastercard" checked><span>Mastercard</span></label>
+          <label class="chip"><input type="checkbox" name="net" value="Amex"><span>Amex</span></label>
+        </div>
+        <label>Agent under test</label>
+        <div class="profiles">
+          <label class="profile"><input type="radio" name="profile" value="baseline" checked>
+            <span><b>Without guardrails</b><small>Trusts the invoice page, only checks the budget.</small></span></label>
+          <label class="profile"><input type="radio" name="profile" value="hardened">
+            <span><b>With guardrails</b><small>Checks supplier, domain and bank details against master data.</small></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Mandate</h3>
+        <label for="maxAmount">Maximum payment (€)</label>
+        <input type="number" id="maxAmount" value="50000" min="0">
+        <label for="approval">Human approval above (€)</label>
+        <input type="number" id="approval" value="10000" min="0">
+        <label class="check"><input type="checkbox" id="onlyApproved" checked> Pay approved suppliers only</label>
+        <label class="check"><input type="checkbox" id="verifyDomain" checked> Verify supplier domain</label>
+        <label class="check"><input type="checkbox" id="verifyBank" checked> Verify bank details</label>
+      </div>
+
+      <div class="card">
+        <h3>Network readiness</h3>
+        <label class="check"><input type="checkbox" id="identity" checked> Agent identity registered</label>
+        <label class="check"><input type="checkbox" id="intent"> Signed purchase intent on each payment</label>
+        <label class="check"><input type="checkbox" id="notify" checked> Buyer notified of agent payments</label>
+        <p class="note">Checked against the networks' published agent requirements (identity, verifiable intent, notification).</p>
+        <p class="note" id="scnCount"></p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="runBtn" disabled>Run test suite →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2 -->
+  <section class="screen" id="s2">
+    <h1 id="runTitle">Testing…</h1>
+    <p class="sub" id="runSub">Each scenario is a payment request. The agent decides: pay, block or escalate.</p>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="feed" id="feed"></div>
+  </section>
+
+  <!-- SCREEN 3 -->
+  <section class="screen" id="s3">
+    <div class="card">
+      <div class="hero">
+        <div class="gauge">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="86" fill="none" stroke="#262b38" stroke-width="14"/>
+            <circle id="arc" cx="100" cy="100" r="86" fill="none" stroke="#5b8cff" stroke-width="14"
+                    stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="540.35"
+                    style="transition: stroke-dashoffset 1.2s ease"/>
+          </svg>
+          <div class="val"><div><div class="num" id="score">0</div><div class="of">Botic score</div></div></div>
+        </div>
+        <div>
+          <p class="verdict" id="verdict"></p>
+          <p class="sub" id="verdictSub" style="margin:0"></p>
+          <div class="kpis">
+            <div class="kpi"><div class="k">Scenarios passed</div><div class="v" id="kPass"></div></div>
+            <div class="kpi"><div class="k">Critical violations</div><div class="v" id="kCrit"></div></div>
+            <div class="kpi"><div class="k">Money at risk</div><div class="v" id="kMoney"></div></div>
+            <div class="kpi"><div class="k">Network checks</div><div class="v" id="kNet"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:18px">
+      <div class="card">
+        <h3>By category</h3>
+        <div id="cats"></div>
+      </div>
+      <div class="card">
+        <h3>Network compliance</h3>
+        <div id="nets"></div>
+      </div>
+      <div class="card">
+        <h3>Fixes before onboarding</h3>
+        <ul class="fixes" id="fixes"></ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3>Scenario details</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Result</th><th>Scenario</th><th>Agent</th><th>Expected</th><th>Why</th></tr></thead>
+          <tbody id="details"></tbody>
+        </table>
+      </div>
+      <p class="note" id="savedNote"></p>
+    </div>
+
+    <div class="actions">
+      <button class="ghost" id="backBtn">← Change settings</button>
+      <button class="primary" id="againBtn">Run again</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const eur = (n) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n || 0);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function show(n) {
+  document.querySelectorAll(".screen").forEach((s, i) => s.classList.toggle("on", i === n - 1));
+  document.querySelectorAll(".step").forEach((s) => {
+    const k = +s.dataset.step;
+    s.classList.toggle("active", k === n);
+    s.classList.toggle("done", k < n);
+  });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showError(msg) {
+  const e = $("err");
+  e.textContent = msg;
+  e.style.display = msg ? "block" : "none";
+}
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || `Request failed (${res.status})`);
+  return body;
+}
+
+async function checkDb() {
+  try {
+    const h = await api("/api/health");
+    $("dbDot").className = "dot ok";
+    $("dbText").textContent = `Database connected · ${h.scenarios} scenarios · ${h.suppliers} suppliers`;
+    $("scnCount").textContent = `${h.scenarios} scenarios loaded from this week's test library.`;
+    $("runBtn").disabled = h.scenarios === 0;
+  } catch (e) {
+    $("dbDot").className = "dot ko";
+    $("dbText").textContent = "Database unreachable";
+    showError(`Could not reach the database: ${e.message}. Check DATABASE_URL.`);
+  }
+}
+
+function payload() {
+  return {
+    agent_name: $("agentName").value,
+    company: $("company").value,
+    profile: document.querySelector("input[name=profile]:checked").value,
+    networks: [...document.querySelectorAll("input[name=net]:checked")].map((i) => i.value),
+    mandate: {
+      max_amount: +$("maxAmount").value || 0,
+      approval_threshold: +$("approval").value || 0,
+      only_approved: $("onlyApproved").checked,
+      verify_domain: $("verifyDomain").checked,
+      verify_bank: $("verifyBank").checked,
+    },
+    readiness: {
+      identity_registered: $("identity").checked,
+      signed_intent: $("intent").checked,
+      user_notification: $("notify").checked,
+    },
+  };
+}
+
+function badgeFor(r) {
+  if (r.critical_violation) return '<span class="badge crit">CRITICAL</span>';
+  if (r.passed) return '<span class="badge pass">PASS</span>';
+  return '<span class="badge fail">FAIL</span>';
+}
+
+async function run() {
+  showError("");
+  const p = payload();
+  show(2);
+  $("runTitle").textContent = `Testing ${p.agent_name}…`;
+  $("feed").innerHTML = "";
+  $("bar").style.width = "0";
+
+  let data;
+  try {
+    data = await api("/api/run-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(p),
+    });
+  } catch (e) {
+    show(1);
+    showError(`Test failed: ${e.message}`);
+    return;
+  }
+
+  const results = data.results;
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <span class="badge wait">RUNNING</span>
+      <div><div class="title">${esc(r.name)}</div><div class="meta mono">${esc(r.website_domain)}</div></div>
+      <div class="amt">${eur(r.amount)}</div>`;
+    $("feed").prepend(row);
+    await sleep(450);
+    row.querySelector(".badge").outerHTML = badgeFor(r);
+    row.querySelector(".meta").innerHTML = `${esc(r.website_domain)} · agent: <b>${esc(r.agent)}</b> · expected: <b>${esc(r.expected_raw)}</b>`;
+    $("bar").style.width = `${Math.round(((i + 1) / results.length) * 100)}%`;
+  }
+  await sleep(600);
+  renderReport(data);
+  show(3);
+}
+
+function renderReport(data) {
+  const s = data.summary;
+  const color = s.critical ? "var(--crit)" : s.certifiable ? "var(--pass)" : "var(--fail)";
+  $("arc").style.stroke = s.critical ? "#ef4b5f" : s.certifiable ? "#2fbf71" : "#f0a63a";
+  $("arc").style.strokeDashoffset = 540.35;
+  requestAnimationFrame(() => { $("arc").style.strokeDashoffset = 540.35 * (1 - s.score / 100); });
+
+  let n = 0;
+  const target = s.score;
+  const tick = setInterval(() => {
+    n = Math.min(target, n + Math.max(1, Math.ceil(target / 40)));
+    $("score").textContent = n;
+    if (n >= target) clearInterval(tick);
+  }, 25);
+
+  $("verdict").textContent = s.verdict;
+  $("verdict").style.color = color;
+  $("verdictSub").textContent = s.critical
+    ? `${data.agent_name} paid ${s.critical} fraudulent or unauthorised request${s.critical > 1 ? "s" : ""}. One critical violation blocks certification.`
+    : s.certifiable
+      ? `${data.agent_name} respected its mandate on every scenario and can apply for network onboarding.`
+      : `${data.agent_name} made no critical error but still has gaps to close.`;
+  $("kPass").textContent = `${s.passed}/${s.total}`;
+  $("kCrit").textContent = s.critical;
+  $("kCrit").style.color = s.critical ? "var(--crit)" : "var(--pass)";
+  $("kMoney").textContent = eur(s.money_at_risk);
+  $("kMoney").style.color = s.money_at_risk ? "var(--crit)" : "var(--pass)";
+  $("kNet").textContent = `${s.network.passed}/${s.network.total}`;
+
+  $("cats").innerHTML = Object.entries(s.by_category).map(([name, c]) => {
+    const pct = Math.round((100 * c.passed) / c.total);
+    const col = pct === 100 ? "var(--pass)" : pct >= 50 ? "var(--fail)" : "var(--crit)";
+    return `<div class="cat"><div class="top"><span>${esc(name)}</span><span>${c.passed}/${c.total}</span></div>
+      <div class="mini"><div style="width:${pct}%;background:${col}"></div></div></div>`;
+  }).join("");
+
+  $("nets").innerHTML = s.network.checks.map((c) =>
+    `<div class="net"><span class="badge ${c.passed ? "pass" : "fail"}">${c.passed ? "OK" : "MISSING"}</span>${esc(c.label)}</div>`
+  ).join("");
+
+  $("fixes").innerHTML = s.fixes.length
+    ? s.fixes.map((f) => `<li>${esc(f)}</li>`).join("")
+    : "<li>No fixes needed. Ready to submit.</li>";
+
+  $("details").innerHTML = data.results.map((r) => `
+    <tr>
+      <td>${badgeFor(r)}</td>
+      <td><b>${esc(r.name)}</b><div class="why mono">${esc(r.website_domain)} · ${eur(r.amount)}</div></td>
+      <td>${esc(r.agent)}</td>
+      <td>${esc(r.expected_raw)}</td>
+      <td class="why">${esc(r.reasoning)}${r.risk_reason ? `<br>Risk: ${esc(r.risk_reason)}` : ""}</td>
+    </tr>`).join("");
+
+  $("savedNote").textContent = data.saved
+    ? `Results saved to test_runs · ${new Date(data.run_at).toLocaleString("en-GB")}`
+    : "Results could not be saved to the database (read-only mode).";
+}
+
+$("runBtn").addEventListener("click", run);
+$("againBtn").addEventListener("click", run);
+$("backBtn").addEventListener("click", () => show(1));
+checkDb();
+</script>
+</body>
+</html>
