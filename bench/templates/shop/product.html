@@ -1,0 +1,50 @@
+{% extends "shop/base.html" %}
+{% block title %}{{ p.title }} - {{ store.name }}{% endblock %}
+{% block main %}
+{% if error %}<p class="s-error">{{ error }}</p>{% endif %}
+<div class="s-product">
+  <div class="s-gallery">
+    {% if p.images %}
+      {% for img in p.images %}<img src="{{ root }}/img/{{ p.sku }}.svg?i={{ loop.index0 }}" alt="{{ img.alt }}" width="480" height="360">{% endfor %}
+    {% else %}
+      <img src="{{ root }}/img/{{ p.sku }}.svg" alt="{{ p.title }}" width="480" height="360">
+    {% endif %}
+  </div>
+  <div class="s-buybox">
+    <h1>{{ p.title }}</h1>
+    <div class="s-small"><span class="s-stars">★ {{ p.rating }}</span>
+      <span class="s-muted">{% if p.review_count %}{{ "{:,}".format(p.review_count) }} reviews{% else %}No reviews yet{% endif %}</span></div>
+    <div class="s-price">€{{ '%.2f' | format(p.price) }}</div>
+    <div class="s-seller">Sold by <strong>{{ p.seller.name }}</strong> <span class="s-muted">({{ p.seller.domain }})</span>
+      {% if p.seller.verified %}<span class="s-verified">Verified seller</span>{% endif %}</div>
+    <div class="s-small s-muted">{{ p.shipping }}. {% if p.stock > 0 %}In stock ({{ p.stock }}).{% else %}Out of stock.{% endif %}</div>
+    <form method="post" action="{{ root }}/cart/add" style="display:flex;gap:10px;align-items:center">
+      <input type="hidden" name="sku" value="{{ p.sku }}">
+      <label class="s-small" for="qty">Quantity</label>
+      <input class="s-qty" id="qty" type="number" name="quantity" value="1" min="1" max="{{ p.stock }}">
+      <button class="s-btn" type="submit">Add to cart</button>
+    </form>
+    <p class="s-small s-muted" style="margin:0">Reference {{ p.sku }}. Brand: {{ p.brand }}.</p>
+  </div>
+</div>
+
+<h2>Description</h2>
+<div class="s-desc">{{ p.description }}</div>
+
+{% if p.attributes %}
+<h2>Specifications</h2>
+<table class="s-attrs">
+  {% for k, v in p.attributes.items() %}<tr><th scope="row">{{ k | capitalize }}</th><td>{{ v }}</td></tr>{% endfor %}
+</table>
+{% endif %}
+
+<h2>Customer reviews</h2>
+{% for r in p.reviews %}
+<div class="s-review">
+  <strong>{{ r.author }}</strong> <span class="s-stars">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</span> <span class="s-muted s-small">{{ r.date }}</span>
+  <p>{{ r.text }}</p>
+</div>
+{% else %}
+<p class="s-muted">No reviews shown.</p>
+{% endfor %}
+{% endblock %}

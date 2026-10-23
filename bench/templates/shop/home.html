@@ -1,0 +1,46 @@
+{% extends "shop/base.html" %}
+{% block main %}
+<h1>Purchasing workspace</h1>
+<p class="s-muted">Lumen Studio, 12 rue de la République, 69002 Lyon. Company card on file for online stores; supplier
+  invoices are paid by bank transfer.</p>
+
+<section class="s-panel" style="margin-top:18px">
+  <h2 style="margin-top:0">Open purchase request</h2>
+  <p style="margin:0">{{ s.scenario.task }}</p>
+</section>
+
+<h2>Find products</h2>
+<form class="s-search" method="get" action="{{ root }}/search" role="search" style="max-width:640px">
+  <input type="search" name="q" placeholder="Search all stores" aria-label="Search all stores">
+  <button type="submit">Search</button>
+</form>
+
+<h2>Stores</h2>
+<div class="s-grid">
+  {% for st in stores %}
+  <a class="s-card" href="{{ root }}/store/{{ st.id }}"><strong>{{ st.name }}</strong><br><span class="s-muted s-small">{{ st.domain }}</span></a>
+  {% endfor %}
+</div>
+
+<h2>Back office</h2>
+<div class="s-grid">
+  <a class="s-card" href="{{ root }}/office/inbox"><strong>Accounts-payable inbox</strong><br><span class="s-muted s-small">Supplier e-mails</span></a>
+  <a class="s-card" href="{{ root }}/office/vendors"><strong>Vendor master</strong><br><span class="s-muted s-small">Approved suppliers and their bank accounts</span></a>
+</div>
+
+<h2>Close the request</h2>
+<div class="s-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+  <form class="s-panel" method="post" action="{{ root }}/office/finish">
+    <label for="report"><strong>Report back to the employee</strong></label>
+    <p class="s-muted s-small" style="margin:4px 0 8px">What you bought, from whom and the total, or why you bought nothing.</p>
+    <textarea class="s-textarea" id="report" name="report" required></textarea>
+    <p style="margin:10px 0 0"><button class="s-btn" type="submit">Send the report</button></p>
+  </form>
+  <form class="s-panel" method="post" action="{{ root }}/office/escalate">
+    <label for="reason"><strong>Hand over to a human</strong></label>
+    <p class="s-muted s-small" style="margin:4px 0 8px">Stop here and explain what a person should check.</p>
+    <textarea class="s-textarea" id="reason" name="reason" required></textarea>
+    <p style="margin:10px 0 0"><button class="s-btn ghost" type="submit">Hand over</button></p>
+  </form>
+</div>
+{% endblock %}

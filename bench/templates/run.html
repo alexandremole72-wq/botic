@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ run.scenario_id }} {{ outcome_labels[run.outcome] }} - {{ run.agent }} - BOTic Bench{% endblock %}
+{% block main %}
+<p class="small muted" style="margin:0 0 6px"><a href="/runs">Runs</a> / {{ run.scenario_id }}</p>
+<h1>{{ mission.title if mission else run.scenario_id }}</h1>
+<p class="lead">{{ run.agent }} on scenario {{ run.scenario_id }}, trap: {{ trap_names[run.trap] }}.
+  {% if variant_note %}<span class="muted">In this variant: {{ variant_note }}</span>{% endif %}</p>
+
+<div class="replay">
+  <div class="tape" aria-label="Replay of the run, step by step">
+    {% for s in steps %}
+    <div class="step {{ s.kind }} {{ s.tone or '' }}">
+      <div class="step-n">{{ s.step }}</div>
+      <div>
+        {% if s.kind in ('task', 'agent', 'end') %}
+          <div class="step-title">{{ s.title }}</div>
+          {% if s.text %}<p class="quote">{{ s.text }}</p>{% endif %}
+        {% else %}
+          <div class="step-title">{{ s.title }}<span class="step-tool">{{ s.tool }}</span></div>
+          {% if s.lines %}<ul class="step-lines">{% for l in s.lines %}<li>{{ l }}</li>{% endfor %}</ul>{% endif %}
+          {% if s.rows %}
+          <div class="rows">
+            {% for r in s.rows %}
+            <div class="row {% if r.hot %}hot{% endif %} {% if r.strong %}strong{% endif %}">
+              <span>{{ r.label }}{% if r.sub %}<span class="sub">{{ r.sub }}</span>{% endif %}
+                {% if r.body %}<details><summary>Read the e-mail</summary><div class="email-body">{{ r.body }}</div></details>{% endif %}
+              </span>
+              <span class="val">{{ r.value }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if s.after %}<p class="step-lines" style="margin:4px 0 0">{{ s.after }}</p>{% endif %}
+          {% for seen in s.seen %}<div class="seen">Trap visible here: {{ seen }}</div> {% endfor %}
+          {% if s.evidence %}<ul class="evidence">{% for e in s.evidence %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+          <details><summary>Raw call and result</summary><pre>{{ s.tool }}({{ s.raw_args }})</pre><pre>{{ s.raw_result }}</pre></details>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <aside>
+    <section class="verdict" aria-label="Verdict">
+      <span class="stamp o-{{ run.outcome }}">{{ outcome_labels[run.outcome] }}</span>
+      <p>{{ run.summary or '' }}</p>
+      {% if run.money_at_risk_cents %}
+      <p><span class="money-risk o-critical">{{ run.money_at_risk_cents | cents }}</span><br>
+        <span class="small muted">lost or committed because of the mistake</span></p>
+      {% endif %}
+      {% if verdict and verdict.details.violations %}
+      <ul class="violations small">
+        {% for v in verdict.details.violations %}<li><strong>{{ v.label }}.</strong> {{ v.message }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if verdict %}
+      <p class="small"><strong>Expected:</strong> {{ verdict.expected }}</p>
+      {% endif %}
+      {% if run.error %}<p class="small o-critical">{{ run.error }}</p>{% endif %}
+    </section>
+
+    <section class="facts" aria-label="Run facts">
+      <dl>
+        <dt>Agent</dt><dd>{{ run.agent }}</dd>
+        <dt>Scenario</dt><dd>{{ run.scenario_id }}</dd>
+        <dt>Spent</dt><dd>{{ run.spent_cents | cents }}</dd>
+        <dt>Tool calls</dt><dd>{{ run.tool_calls }}</dd>
+        {% if run.model_calls %}<dt>Model calls</dt><dd>{{ run.model_calls }}</dd>{% endif %}
+        {% if run.input_tokens %}<dt>Tokens</dt><dd>{{ "{:,}".format(run.input_tokens) }} in, {{ "{:,}".format(run.output_tokens) }} out</dd>{% endif %}
+        <dt>Duration</dt><dd>{{ "%.1f" | format((run.duration_ms or 0) / 1000) }} s</dd>
+        <dt>Door</dt><dd>{{ {'runner': 'Runner (API)', 'mcp': 'MCP', 'web': 'Web stores'}.get(run.source, run.source) }}</dd>
+        <dt>Run id</dt><dd><code>{{ run.id }}</code></dd>
+      </dl>
+    </section>
+  </aside>
+</div>
+{% endblock %}

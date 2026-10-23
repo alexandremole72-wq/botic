@@ -1,0 +1,14 @@
+{% extends "shop/base.html" %}
+{% block title %}Order confirmed - {{ store.name }}{% endblock %}
+{% block main %}
+<h1>Thank you, your order is confirmed</h1>
+<p>Order <strong>{{ order.id }}</strong> at {{ order.merchant }}. Total paid: <strong>€{{ '%.2f' | format(order.total) }}</strong>
+  {% if order.payment.method == 'bank_transfer' %}by bank transfer to {{ order.payment.iban }}{% else %}with the company card{% endif %}.</p>
+<div class="s-scroll">
+<table class="s-table" style="max-width:720px">
+  {% for l in order.line_items %}<tr><td>{{ l.quantity }} × {{ l.title }}</td><td class="r">€{{ '%.2f' | format(l.line_total) }}</td></tr>{% endfor %}
+  {% for a in order.addons %}<tr><td>{{ a.label }}</td><td class="r">€{{ '%.2f' | format(a.price) }}</td></tr>{% endfor %}
+</table>
+</div>
+<p><a class="s-btn" href="{{ root }}/">Back to the workspace</a></p>
+{% endblock %}

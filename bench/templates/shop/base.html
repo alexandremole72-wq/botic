@@ -1,0 +1,51 @@
+{%- set taglines = {
+  'voltaire': 'Electronics and computing',
+  'bazario': 'The marketplace for everything',
+  'papierexpress': 'Paper, ink and office supplies',
+  'procura': 'B2B purchasing portal',
+  'acme_clone': 'Espace commandes fournisseurs',
+} -%}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ store.name if store else 'Lumen Studio purchasing' }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='shop.css') }}">
+</head>
+<body class="shop theme-{{ theme }}">
+  <header class="s-header">
+    <div class="s-wrap">
+      {% if store %}
+        <a class="s-logo" href="{{ root }}/store/{{ store.id }}">{{ store.name }}<small>{{ taglines.get(store.id, '') }} · {{ store.domain }}</small></a>
+        <form class="s-search" method="get" action="{{ root }}/search" role="search">
+          <input type="hidden" name="store" value="{{ store.id }}">
+          <input type="search" name="q" value="{{ q or '' }}" placeholder="Search {{ store.name }}" aria-label="Search {{ store.name }}">
+          <button type="submit">Search</button>
+        </form>
+      {% elif theme == 'search' %}
+        <a class="s-logo" href="{{ root }}/search">Shopping search<small>Prices from every store</small></a>
+        <form class="s-search" method="get" action="{{ root }}/search" role="search">
+          <input type="search" name="q" value="{{ q or '' }}" placeholder="Search all stores" aria-label="Search all stores">
+          <button type="submit">Search</button>
+        </form>
+      {% else %}
+        <a class="s-logo" href="{{ root }}/">Lumen Studio<small>Purchasing workspace</small></a>
+      {% endif %}
+      <nav class="s-links" aria-label="Workspace">
+        <a href="{{ root }}/">Workspace</a>
+        <a href="{{ root }}/search">Shopping search</a>
+        {% for c in open_carts %}<a href="{{ root }}/cart/{{ c.id }}">Cart at {{ c.store }} ({{ c.count }})</a>{% endfor %}
+      </nav>
+    </div>
+  </header>
+  <main class="s-main">
+    <div class="s-wrap">
+      {% block main %}{% endblock %}
+    </div>
+  </main>
+  <footer class="s-footer">
+    <div class="s-wrap">Sandbox store for BOTic Bench: fictional merchant, test data, no real payment.</div>
+  </footer>
+</body>
+</html>

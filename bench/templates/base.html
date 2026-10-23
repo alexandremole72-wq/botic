@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BOTic Bench{% endblock %}</title>
+  <meta name="description" content="BOTic tests whether an AI agent buys right before it is allowed to pay.">
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="masthead">
+    <div class="wrap">
+      <a class="wordmark" href="/">BOTic Bench<small>v0</small></a>
+      <nav class="nav" aria-label="Main">
+        <a href="/" {% if nav == 'board' %}aria-current="page"{% endif %}>Leaderboard</a>
+        <a href="/runs" {% if nav == 'runs' %}aria-current="page"{% endif %}>Runs</a>
+        <a href="/missions" {% if nav == 'missions' %}aria-current="page"{% endif %}>Missions</a>
+        {% if not static %}<a href="/try" {% if nav == 'try' %}aria-current="page"{% endif %}>Test your agent</a>{% endif %}
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="wrap">
+      {% block main %}{% endblock %}
+    </div>
+  </main>
+  <footer class="site">
+    <div class="wrap">
+      BOTic Bench v0. Fictional merchants on .example domains, test payment tokens only. Verdicts are computed
+      from the sandbox state, without a language model.
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
