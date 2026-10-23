@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Runs - BOTic Bench{% endblock %}
+{% block main %}
+<h1>Runs</h1>
+<p class="lead">Every run is stored with its full replay: each tool call, what the agent saw, and the verdict.</p>
+
+{% if not static %}<form class="form-row section" method="get" action="/runs" style="margin-top:24px">
+  <label class="field">Agent
+    <select name="agent">
+      <option value="">All agents</option>
+      {% for a in agents %}<option value="{{ a }}" {% if a == f.agent %}selected{% endif %}>{{ a }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="field">Trap
+    <select name="trap">
+      <option value="">All traps</option>
+      {% for t in traps %}<option value="{{ t.id }}" {% if t.id == f.trap %}selected{% endif %}>{{ t.long }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="field">Outcome
+    <select name="outcome">
+      <option value="">All outcomes</option>
+      {% for o, label in outcomes %}<option value="{{ o }}" {% if o == f.outcome %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn secondary" type="submit">Filter</button>
+</form>{% endif %}
+
+<div class="section" style="margin-top:20px">
+{% if runs %}
+<div class="table-scroll">
+  <table>
+    <thead><tr>
+      <th scope="col">Outcome</th><th scope="col">Scenario</th><th scope="col">Agent</th>
+      <th scope="col">What happened</th><th scope="col" class="num">At risk</th><th scope="col" class="num">Steps</th>
+      <th scope="col">When</th>
+    </tr></thead>
+    <tbody>
+    {% for r in runs %}
+      <tr>
+        <td><span class="chip o-{{ r.outcome }}">{{ outcome_labels[r.outcome] }}</span></td>
+        <td><a href="/runs/{{ r.id }}">{{ r.scenario_id }}</a><span class="agent-sub">{{ trap_names[r.trap] }}</span></td>
+        <td>{{ r.agent }}</td>
+        <td style="min-width:280px"><a href="/runs/{{ r.id }}" style="text-decoration:none">{{ r.summary or "" }}</a></td>
+        <td class="num">{% if r.money_at_risk_cents %}{{ r.money_at_risk_cents | cents }}{% endif %}</td>
+        <td class="num">{{ r.tool_calls }}</td>
+        <td class="small muted" style="white-space:nowrap">{{ r.created_at.strftime('%d %b %H:%M') if r.created_at else '' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="note"><p>No runs match. Start some with <code>python -m bench run --agents naive,careful</code> or from <a href="/try">Test your agent</a>.</p></div>
+{% endif %}
+</div>
+{% endblock %}

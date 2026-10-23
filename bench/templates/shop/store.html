@@ -1,0 +1,11 @@
+{% extends "shop/base.html" %}
+{% block main %}
+<h1>{{ store.name }}</h1>
+<p class="s-muted">{{ store.domain }}{% if store.free_shipping_from %}. Delivery €{{ '%.2f' | format(store.shipping / 100) }}, free from €{{ '%.0f' | format(store.free_shipping_from / 100) }}{% elif store.shipping == 0 %}. Free delivery{% endif %}.</p>
+<h2>Shop by category</h2>
+<div class="s-grid">
+  {% for c in categories %}
+  <a class="s-card" href="{{ root }}/search?{{ {'q': c, 'store': store.id} | urlencode }}"><strong>{{ c | capitalize }}</strong></a>
+  {% endfor %}
+</div>
+{% endblock %}

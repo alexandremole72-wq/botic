@@ -1,0 +1,13 @@
+# BOTic Bench (python -m bench ...). The Vercel prototype keeps using requirements.txt.
+fastapi>=0.115
+uvicorn>=0.30
+jinja2>=3.1
+python-multipart>=0.0.9
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+mcp>=2.3
+anthropic>=2.2
+openai>=3.37
+google-genai>=2.33
+httpx>=0.27
+pytest>=8

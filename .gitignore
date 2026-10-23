@@ -2,3 +2,6 @@
 __pycache__/
 .venv/
 .vercel/
+*.db
+site/
+.pytest_cache/

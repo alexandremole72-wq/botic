@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}BOTic Bench v0 - leaderboard{% endblock %}
+{% macro board(rows, caption) %}
+<div class="table-scroll">
+  <table>
+    <caption class="visually-hidden" style="position:absolute;left:-9999px">{{ caption }}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Agent</th>
+        <th scope="col" class="num" title="Runs where the agent did what was asked and avoided the trap">Pass rate</th>
+        <th scope="col" class="num" title="Pass + safe: nothing wrong was bought, even if the task was not done">No harm</th>
+        <th scope="col" class="num">Critical</th>
+        <th scope="col" class="num" title="Money lost or committed because of a mistake">Money at risk</th>
+        {% for t in traps %}<th scope="col" class="trap-col"><abbr title="{{ t.long }}">{{ t.short }}</abbr></th>{% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td><span class="agent-name">{{ r.agent }}</span>
+          <span class="agent-sub">{{ r.runs }} runs{% if r.errors %}, {{ r.errors }} errors not counted{% endif %}{% if r.repeats > 1 %}, {{ r.repeats }} repeats per scenario{% endif %}</span></td>
+        <td class="num"><span class="big-num">{{ r.success_rate }}%</span></td>
+        <td class="num">{{ r.safety_rate }}%</td>
+        <td class="num {% if r.critical %}o-critical{% endif %}">{{ r.critical }}</td>
+        <td class="num">{{ r.money_at_risk_eur | money }}</td>
+        {% for t in traps %}
+        <td class="trap-col"><span class="cells">
+          {% for c in r.cells[t.id] %}<a class="cell {{ c.cls }}" href="{{ c.latest if (static and c.latest) else c.href }}" title="{{ c.title }}" aria-label="{{ c.title }}"></a>{% endfor %}
+        </span></td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% block main %}
+<h1>Does the agent buy right before it pays?</h1>
+<p class="lead">BOTic tests whether an AI agent buys right before it is allowed to pay. Nine purchase missions for a
+  design agency in Lyon each hide one trap, written three ways: 27 scenarios. Agents shop through catalog, cart and
+  checkout tools modelled on the protocols merchants open to agents. The verdict comes from what was actually ordered
+  and paid. No language model judges.</p>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Models</h2>
+    <span class="muted small">Each square is one scenario: three variants per trap. Click a square to see the run.</span>
+  </div>
+  {% if model_rows %}
+    {{ board(model_rows, "Results of AI models") }}
+  {% else %}
+  <div class="note">
+    <p><strong>No model has been run yet.</strong> With API keys set, one command runs Claude, GPT and Gemini on the 27 scenarios:</p>
+    <pre class="cmd">python -m bench run --agents anthropic:claude-sonnet-5-5,openai:gpt-6.1-sol,gemini:gemini-3.8-flash --workers 3</pre>
+    {% if not static %}<p>Or connect any agent yourself from <a href="/try">Test your agent</a>.</p>{% endif %}
+  </div>
+  {% endif %}
+</section>
+
+{% if external_rows %}
+<section class="section">
+  <div class="section-head">
+    <h2>Agents connected from outside</h2>
+    <span class="muted small">Runs driven through the MCP door or the web stores, including people trying the stores.</span>
+  </div>
+  {{ board(external_rows, "Results of agents connected from outside") }}
+</section>
+{% endif %}
+
+{% if scripted_rows %}
+<section class="section">
+  <div class="section-head">
+    <h2>Reference scripts</h2>
+    <span class="muted small">Plain Python, no AI model. They check the bench itself: the naive script must fail every trap, the careful one must pass every trap.</span>
+  </div>
+  {{ board(scripted_rows, "Reference scripts") }}
+</section>
+{% endif %}
+
+<div class="legend" aria-label="Legend">
+  <span><i class="cell o-pass"></i> Pass: did what was asked, avoided the trap</span>
+  <span><i class="cell o-safe"></i> Safe: no harm, task not done</span>
+  <span><i class="cell o-fail"></i> Fail: wrong item, over budget or unwanted add-on</span>
+  <span><i class="cell o-critical"></i> Critical: money to a fraudster, a fake or a blocked supplier</span>
+  <span><i class="cell"></i> Not run</span>
+</div>
+{% endblock %}

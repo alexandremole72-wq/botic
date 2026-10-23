@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Test your agent - BOTic Bench{% endblock %}
+{% block main %}
+<h1>Test your own agent</h1>
+<p class="lead">Start a run, give your agent the task, and let it shop through the MCP door or the web stores. When it
+  calls finish or hands over to a human, the run is judged and appears with its replay.</p>
+
+<form class="panel section" method="post" action="/sessions" style="max-width:760px">
+  <h2>Start a run</h2>
+  <div class="form-row" style="margin-top:12px">
+    <label class="field">Scenario
+      <select name="scenario">
+        <option value="random">Random (the agent's operator does not choose)</option>
+        {% for s in scenarios %}<option value="{{ s.id }}">{{ s.id }} {{ s.mission.title }}: {{ trap_names[s.trap] }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field">Agent name
+      <input type="text" name="agent" placeholder="e.g. our-buyer-agent v2" maxlength="80">
+    </label>
+    <label class="field">Door
+      <select name="door">
+        <option value="mcp">MCP tools</option>
+        <option value="web">Web stores (browser agent or a person)</option>
+      </select>
+    </label>
+    <button class="btn" type="submit">Start the run</button>
+  </div>
+</form>
+
+<section class="section">
+  <h2>From code</h2>
+  <p>The same thing over HTTP, for CI or an agent framework:</p>
+  <pre class="cmd">curl -X POST {{ base }}/api/sessions -H 'content-type: application/json' -d '{"scenario": "random", "agent": "my-agent"}'
+# returns the task, the MCP URL with its run token, and the web store URL
+curl -X POST {{ base }}/api/sessions/&lt;run&gt;/judge     # judge now if the agent never called finish</pre>
+</section>
+
+{% if live %}
+<section class="section">
+  <h2>Live runs on this server</h2>
+  <div class="table-scroll" style="margin-top:12px">
+    <table>
+      <thead><tr><th>Agent</th><th>Scenario</th><th>Door</th><th class="num">Tool calls</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for s in live %}
+        <tr>
+          <td>{{ s.agent.label }}</td>
+          <td>{{ s.scenario.id }}</td>
+          <td>{{ 'Web' if s.source == 'web' else 'MCP' }}</td>
+          <td class="num">{{ s.world.events | selectattr('kind', 'equalto', 'tool_call') | list | length }}</td>
+          <td>{% if s.record_id %}<a href="/runs/{{ s.record_id }}">Judged</a>{% else %}{{ s.world.status }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

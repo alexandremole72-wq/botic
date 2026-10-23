@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Run {{ s.scenario.id }} - BOTic Bench{% endblock %}
+{% block main %}
+<p class="small muted" style="margin:0 0 6px"><a href="/try">Test your agent</a> / live run</p>
+<h1>{{ s.agent.label }} on {{ s.scenario.id }}</h1>
+<p class="lead">{{ s.scenario.mission.title }}. Keep this page open: it follows the run and links to the replay once it
+  is judged.</p>
+
+<div class="session-grid">
+  <section class="panel">
+    <h2>1. Give this task to the agent</h2>
+    <p id="task" style="margin:0">{{ s.scenario.task }}</p>
+    <p class="small muted">If your agent has no system prompt of its own, use this one:</p>
+    <details><summary class="small">Show the system prompt</summary><pre class="cmd">{{ system_prompt }}</pre></details>
+  </section>
+
+  <section class="panel">
+    <h2>2. Connect it</h2>
+    {% if s.source == 'mcp' %}
+    <p style="margin:0">MCP server URL (Streamable HTTP):</p>
+    <div class="copyline"><code id="mcp-url">{{ base }}/mcp?run={{ s.token }}</code>
+      <button class="btn secondary" type="button" data-copy="mcp-url">Copy</button></div>
+    <p class="small muted">If your client cannot keep a query string, connect to <code>{{ base }}/mcp</code> and send the
+      header <code>x-botic-run: {{ s.token }}</code>.</p>
+    <p class="small">Prefer a browser? The same run is open in the <a href="{{ base }}/shop/{{ s.token }}/" target="_blank" rel="noopener">web stores</a>.</p>
+    {% else %}
+    <p style="margin:0">Open the stores in the browser your agent controls, or shop yourself:</p>
+    <div class="copyline"><code id="shop-url">{{ base }}/shop/{{ s.token }}/</code>
+      <button class="btn secondary" type="button" data-copy="shop-url">Copy</button></div>
+    <p><a class="btn" href="/shop/{{ s.token }}/" target="_blank" rel="noopener">Open the stores</a></p>
+    <p class="small muted">The same run also answers on MCP: <code>{{ base }}/mcp?run={{ s.token }}</code></p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-live="polite">
+    <h2>3. Watch and judge</h2>
+    <p class="status-line" id="status">{{ status_text }}</p>
+    <p class="small muted" id="last">{{ last_step }}</p>
+    {% if s.record_id %}
+      <p><a class="btn" href="/runs/{{ s.record_id }}">See the verdict and replay</a></p>
+    {% else %}
+    <form method="post" action="/sessions/{{ s.token }}/judge" id="judge-form">
+      <button class="btn secondary" type="submit">Judge this run now</button>
+    </form>
+    <p class="small muted">Runs are judged on their own when the agent calls finish or escalate_to_human.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.querySelectorAll("[data-copy]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var text = document.getElementById(btn.dataset.copy).textContent;
+      if (navigator.clipboard) { navigator.clipboard.writeText(text).then(function () { btn.textContent = "Copied"; }); }
+    });
+  });
+  {% if not s.record_id %}
+  (function poll() {
+    fetch("/api/sessions/{{ s.token }}").then(function (r) { return r.json(); }).then(function (d) {
+      document.getElementById("status").textContent = d.status_text;
+      document.getElementById("last").textContent = d.last_step || "";
+      if (d.run_id) { window.location.href = "/runs/" + d.run_id; return; }
+      setTimeout(poll, 3000);
+    }).catch(function () { setTimeout(poll, 6000); });
+  })();
+  {% endif %}
+</script>
+{% endblock %}

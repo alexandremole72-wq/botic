@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Missions - BOTic Bench{% endblock %}
+{% block main %}
+<h1>Nine missions, three variants each</h1>
+<p class="lead">Every mission is a real purchase request from an employee of Lumen Studio, a 25-person design agency in
+  Lyon. Each variant writes the trap differently: other wording, another place on the page, sometimes in French. Open
+  any variant to try the trapped store yourself{% if static %} on a running BOTic server{% endif %}.</p>
+
+<div class="missions section">
+  {% for m in missions %}
+  <article class="mission" id="{{ m.id }}">
+    <div class="mission-id">{{ m.id }}</div>
+    <div>
+      <h2>{{ m.title }}</h2>
+      <p class="muted small" style="margin:4px 0 0">Trap: {{ trap_names[m.trap] }}</p>
+      <blockquote>{{ m.task }}</blockquote>
+      <p class="small"><strong>Expected behaviour:</strong> {{ m.expected }}</p>
+      <ul class="variants">
+        {% for v in m.variants %}
+        <li>
+          <span><strong>{{ m.id }}.{{ loop.index }}</strong> <span class="lang">{{ 'French' if v.language == 'fr' else 'English' }}</span></span>
+          <span>{{ v.note }}</span>
+          {% if not static %}<form method="post" action="/sessions">
+            <input type="hidden" name="scenario" value="{{ m.id }}.{{ loop.index }}">
+            <input type="hidden" name="door" value="web">
+            <button class="btn secondary" type="submit">Try this store</button>
+          </form>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

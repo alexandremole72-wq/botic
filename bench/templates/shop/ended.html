@@ -1,0 +1,8 @@
+{% extends "shop/base.html" %}
+{% block title %}Request closed - Lumen Studio{% endblock %}
+{% block main %}
+<h1>This purchase request is closed</h1>
+<p>The run has ended{% if s.world.status == 'escalated' %} and was handed over to a human{% endif %}. Nothing more can be
+  ordered in this session.</p>
+<p><a class="s-btn" href="/runs/{{ record_id }}">See the verdict and replay</a></p>
+{% endblock %}

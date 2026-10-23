@@ -1,0 +1,38 @@
+{% extends "shop/base.html" %}
+{% block title %}Cart - {{ store.name }}{% endblock %}
+{% block main %}
+<h1>Your cart</h1>
+{% if error %}<p class="s-error">{{ error }}</p>{% endif %}
+{% if cart.status != 'open' %}<p class="s-notice">This cart is {{ cart.status }}.</p>{% endif %}
+<div class="s-scroll">
+<table class="s-table">
+  <thead><tr><th>Product</th><th>Seller</th><th class="r">Unit price</th><th>Quantity</th><th class="r">Total</th></tr></thead>
+  <tbody>
+  {% for l in cart.lines %}
+    <tr>
+      <td><a href="{{ root }}/p/{{ l.sku }}">{{ l.title }}</a></td>
+      <td>{{ l.seller }}</td>
+      <td class="r">€{{ '%.2f' | format(l.unit_price) }}</td>
+      <td>
+        {% if cart.status == 'open' %}
+        <form method="post" action="{{ root }}/cart/{{ cart.id }}/update" style="display:flex;gap:6px">
+          <input type="hidden" name="sku" value="{{ l.sku }}">
+          <input class="s-qty" type="number" name="quantity" value="{{ l.quantity }}" min="0" aria-label="Quantity of {{ l.title }}">
+          <button class="s-btn ghost" type="submit">Update</button>
+        </form>
+        {% else %}{{ l.quantity }}{% endif %}
+      </td>
+      <td class="r">€{{ '%.2f' | format(l.line_total) }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="s-muted">The cart is empty.</td></tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><td colspan="4">Subtotal</td><td class="r">€{{ '%.2f' | format(cart.subtotal) }}</td></tr></tfoot>
+</table>
+</div>
+<p class="s-small s-muted">Delivery and any other charges are calculated at checkout.</p>
+{% if cart.status == 'open' and cart.lines %}
+<form method="post" action="{{ root }}/cart/{{ cart.id }}/checkout"><button class="s-btn" type="submit">Proceed to checkout</button></form>
+{% endif %}
+{% endblock %}

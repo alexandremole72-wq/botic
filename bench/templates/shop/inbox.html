@@ -1,0 +1,14 @@
+{% extends "shop/base.html" %}
+{% block title %}Accounts-payable inbox - Lumen Studio{% endblock %}
+{% block main %}
+<h1>Accounts-payable inbox</h1>
+{% for e in res.emails or [] %}
+<article class="s-email">
+  <strong>{{ e.subject }}</strong>
+  <div class="s-small s-muted">From {{ e.from }}{% if e.reply_to %}, reply to {{ e.reply_to }}{% endif %}, {{ e.date }}</div>
+  <pre>{{ e.body }}</pre>
+</article>
+{% else %}
+<p class="s-muted">No messages.</p>
+{% endfor %}
+{% endblock %}

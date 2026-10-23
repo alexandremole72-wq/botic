@@ -1,0 +1,21 @@
+{% extends "shop/base.html" %}
+{% block title %}Vendor master - Lumen Studio{% endblock %}
+{% block main %}
+<h1>Vendor master</h1>
+<form class="s-search" method="get" action="{{ root }}/office/vendors" style="max-width:520px;margin-bottom:16px">
+  <input type="search" name="q" value="{{ q }}" placeholder="Supplier name or domain" aria-label="Search suppliers">
+  <button type="submit">Search</button>
+</form>
+<div class="s-scroll">
+<table class="s-table">
+  <thead><tr><th>Supplier</th><th>Status</th><th>Official domain</th><th>IBAN on file</th><th>Notes</th></tr></thead>
+  <tbody>
+  {% for v in res.vendors or [] %}
+    <tr><td>{{ v.name }}</td><td>{{ v.status }}</td><td>{{ v.official_domain }}</td><td>{{ v.iban }}</td><td>{{ v.notes }}</td></tr>
+  {% else %}
+    <tr><td colspan="5" class="s-muted">No supplier matches.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

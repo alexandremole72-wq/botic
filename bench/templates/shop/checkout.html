@@ -1,0 +1,76 @@
+{% extends "shop/base.html" %}
+{% block title %}Checkout - {{ store.name }}{% endblock %}
+{% block main %}
+<h1>Checkout</h1>
+{% if error %}<p class="s-error">{{ error }}</p>{% endif %}
+{% for n in cs.notices %}<p class="s-notice">{{ n }}</p>{% endfor %}
+{% if price_changed %}
+<p class="s-error">The price changed before payment. New total: €{{ '%.2f' | format(cs.totals.total) }}. Confirm to pay
+  the new total, or cancel the order.</p>
+{% endif %}
+{% if cs.status != 'ready_for_payment' %}<p class="s-notice">This checkout is {{ cs.status }}.</p>{% endif %}
+
+<div class="s-checkout">
+  <section>
+    <h2 style="margin-top:0">Order summary</h2>
+    <div class="s-scroll">
+    <table class="s-table">
+      <tbody>
+        {% for l in cs.line_items %}
+        <tr><td>{{ l.quantity }} × {{ l.title }}<div class="s-small s-muted">Sold by {{ l.seller }}</div></td>
+            <td class="r">€{{ '%.2f' | format(l.line_total) }}</td></tr>
+        {% endfor %}
+        {% for a in cs.adjustments %}<tr><td>{{ a.label }}</td><td class="r">€{{ '%.2f' | format(a.amount) }}</td></tr>{% endfor %}
+        <tr><td>Delivery</td><td class="r">{% if cs.totals.shipping %}€{{ '%.2f' | format(cs.totals.shipping) }}{% else %}Free{% endif %}</td></tr>
+        {% for f in cs.fees %}<tr><td>{{ f.label }}</td><td class="r">€{{ '%.2f' | format(f.amount) }}</td></tr>{% endfor %}
+        {% for a in cs.addons if a.selected %}<tr><td>{{ a.label }}</td><td class="r">€{{ '%.2f' | format(a.price) }}</td></tr>{% endfor %}
+      </tbody>
+      <tfoot><tr><td>Total to pay</td><td class="r">€{{ '%.2f' | format(cs.totals.total) }}</td></tr></tfoot>
+    </table>
+    </div>
+
+    {% if cs.addons %}
+    <h2>Options</h2>
+    <form method="post" action="{{ root }}/checkout/{{ cs.id }}/addons">
+      {% for a in cs.addons %}
+      <label class="s-addon">
+        <input type="checkbox" name="addon_{{ a.id }}" {% if a.selected %}checked{% endif %}>
+        <span>{{ a.label }}<br><span class="s-small s-muted">€{{ '%.2f' | format(a.price) }}{% if a.recurring %} per {{ a.recurring }}{% endif %}</span></span>
+      </label>
+      {% endfor %}
+      <button class="s-btn ghost" type="submit">Update options</button>
+    </form>
+    {% endif %}
+  </section>
+
+  <section class="s-panel">
+    <h2 style="margin-top:0">Payment</h2>
+    <p class="s-small s-muted" style="margin-top:0">Deliver to: {{ s.world.sessions[cs.id].shipping_address }}</p>
+    {% if cs.invoice %}
+    <div class="s-small" style="margin-bottom:12px">
+      <strong>Invoice {{ cs.invoice.reference }}</strong><br>
+      Payee: {{ cs.invoice.payee }}<br>IBAN: {{ cs.invoice.iban }}<br>Amount: €{{ '%.2f' | format(cs.invoice.amount) }}
+    </div>
+    {% endif %}
+    {% if cs.status == 'ready_for_payment' %}
+    <form class="s-pay" method="post" action="{{ root }}/checkout/{{ cs.id }}/pay">
+      {% if 'delegated_card' in cs.payment_methods %}
+      <label><input type="radio" name="method" value="delegated_card" {% if cs.payment_methods[0] == 'delegated_card' %}checked{% endif %}>
+        <span>Company card on file<br><span class="s-small s-muted">Lumen Studio corporate card (test token)</span></span></label>
+      {% endif %}
+      {% if 'bank_transfer' in cs.payment_methods %}
+      <label><input type="radio" name="method" value="bank_transfer" {% if cs.payment_methods[0] == 'bank_transfer' %}checked{% endif %}>
+        <span>Bank transfer</span></label>
+      <label for="iban" class="s-small" style="display:block;margin:0">IBAN to pay</label>
+      <input type="text" id="iban" name="iban" placeholder="e.g. FR76 ..." autocomplete="off">
+      {% endif %}
+      {% if price_changed %}<input type="hidden" name="accept_price_change" value="1">{% endif %}
+      <p style="margin:14px 0 0"><button class="s-btn" type="submit">{% if price_changed %}Accept the new price and pay{% else %}Place order and pay €{{ '%.2f' | format(cs.totals.total) }}{% endif %}</button></p>
+    </form>
+    <form method="post" action="{{ root }}/checkout/{{ cs.id }}/cancel" style="margin-top:10px">
+      <button class="s-btn ghost" type="submit">Cancel this order</button>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
