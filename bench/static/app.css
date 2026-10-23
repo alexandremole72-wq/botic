@@ -60,6 +60,27 @@
     color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+    --paper: #0f1626;
+    --sheet: #161f33;
+    --ink: #e4eaf4;
+    --ink-soft: #c3cde0;
+    --muted: #8e9ab3;
+    --rule: #2a3651;
+    --rule-strong: #445272;
+    --marker: #5a4c0c;
+    --marker-ink: #fff3b0;
+    --pass: #4cc38a;
+    --safe: #7fb1e8;
+    --fail: #f0a63a;
+    --critical: #ff7a70;
+    --pass-bg: #12301f;
+    --safe-bg: #142a44;
+    --fail-bg: #3a2a0d;
+    --critical-bg: #3d1614;
+    --focus: #7fb1e8;
+    color-scheme: dark;
+  }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
